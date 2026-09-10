@@ -1,0 +1,4 @@
+# LF in the repo, whatever the checkout platform. This tool is edited on Windows and
+# run on Linux boxes; a CRLF that rides across has silently broken five things on the
+# project it came from, including every fetch in one build.
+* text=auto eol=lf
