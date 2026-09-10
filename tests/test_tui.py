@@ -166,3 +166,40 @@ def test_a_broken_pgrep_reads_as_not_running_rather_than_crashing(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", boom)
     assert tui.alive("anything") is False
+
+
+# --- several stages writing one log ----------------------------------------------
+
+
+def test_a_stage_that_has_not_started_does_not_claim_to_have_ended(tmp_path):
+    """Three stages of a chain wrote one log, and the two that had not started yet each
+    reported "ended 15s ago" -- reading the age of a log another stage was writing."""
+    assert tui.job_state(job(tmp_path), running=False, since=15, exists=True,
+                         shared_log=True) == "not running"
+
+
+def test_a_stage_with_its_own_log_still_reports_when_it_ended(tmp_path):
+    assert tui.job_state(job(tmp_path), running=False, since=15, exists=True,
+                         shared_log=False) == "ended"
+
+
+def test_a_shared_log_is_only_quoted_under_the_stage_that_is_writing_it(tmp_path):
+    """Otherwise one line of output appears three times and reads as three jobs making
+    the same progress."""
+    log = tmp_path / "chain.log"
+    log.write_text("[teacher] 178,304/1,000,000\n", encoding="utf-8")
+    idle = tui.job_panel(Job("distil", log, "distil[.]py"), 100, shared_log=True)
+    assert len(idle) == 1 and "178,304" not in "".join(idle)
+
+
+def test_stages_sharing_a_log_are_detected_from_the_job_list(tmp_path, monkeypatch):
+    monkeypatch.setattr(tui, "gpu", lambda: (None, None, None))
+    monkeypatch.setattr(tui, "alive", lambda *a, **k: False)
+    from collections import deque
+
+    log = tmp_path / "chain.log"
+    log.write_text("progress\n", encoding="utf-8")
+    jobs = [Job("teacher", log, "teacher[.]py"), Job("distil", log, "distil[.]py")]
+    hist = {k: deque(maxlen=10) for k in ("gpu", "cpu", "mem")}
+    frame = tui.render(jobs, hist, 100, "test", tmp_path)
+    assert frame.count("not running") == 2 and "ended" not in frame

@@ -120,11 +120,19 @@ def bar(pct: float, width: int) -> str:
     return f"{colour}{'█' * filled}{DIM}{'░' * (width - filled)}{RESET}"
 
 
-def job_state(job: Job, running: bool, since: float | None, exists: bool) -> str:
+def job_state(job: Job, running: bool, since: float | None, exists: bool,
+              shared_log: bool = False) -> str:
     """The one word that says what is going on, before any colour is applied.
 
     Split out from the drawing because this is the judgement the monitor exists to make
     and it is the part worth testing; everything around it is escape codes.
+
+    The distinctions are all about what the evidence actually supports. A log that has
+    not moved says nothing on its own; combined with a live process it says stuck. No
+    matching process means finished only when the pattern was given rather than guessed,
+    and only when the log belongs to this job alone -- three stages of a pipeline writing
+    one chain log would otherwise each report "ended 15s ago" while two of them had not
+    started.
     """
     if not exists:
         return "no log"
@@ -136,15 +144,18 @@ def job_state(job: Job, running: bool, since: float | None, exists: bool) -> str
         # The pattern was inferred from the filename, so "no process matched" is not
         # evidence the job ended -- the process may simply not be named after its log.
         return "quiet"
+    if shared_log:
+        # The log's age belongs to whichever stage is writing it, not to this one.
+        return "not running"
     return "ended"
 
 
-def job_panel(job: Job, width: int) -> list[str]:
+def job_panel(job: Job, width: int, shared_log: bool = False) -> list[str]:
     recs = read_records(job.log)
     exists = job.log.exists()
     running = alive(job.match) if exists else False
     since = age(job.log)
-    state = job_state(job, running, since, exists)
+    state = job_state(job, running, since, exists, shared_log)
 
     dot, text = {
         "no log": (f"{DIM}○{RESET}", f"{DIM}no log{RESET}"),
@@ -152,10 +163,16 @@ def job_panel(job: Job, width: int) -> list[str]:
                     f"{YELLOW}stalled? {human_secs(since)} quiet{RESET}"),
         "running": (f"{GREEN}●{RESET}", f"{GREEN}running{RESET}"),
         "quiet": (f"{DIM}·{RESET}", f"{DIM}quiet {human_secs(since)}{RESET}"),
+        "not running": (f"{DIM}○{RESET}", f"{DIM}not running{RESET}"),
         "ended": (f"{DIM}✓{RESET}", f"{DIM}ended {human_secs(since)} ago{RESET}"),
     }[state]
 
     lines = [f" {dot} {BOLD}{job.name:<16}{RESET}{text}"]
+
+    # A shared log's tail belongs to whoever is writing it. Repeating it under every
+    # stage that happens to point at the same file is three copies of one fact.
+    if shared_log and not running:
+        return lines
 
     if recs:
         r = recs[-1]
@@ -195,8 +212,11 @@ def render(jobs: list[Job], hist: dict, width: int, source: str,
 
     if not jobs:
         out.append(f" {DIM}no logs found in {watch_dir}{RESET}")
+    counts: dict[str, int] = {}
+    for j in jobs:
+        counts[str(j.log)] = counts.get(str(j.log), 0) + 1
     for job in jobs:
-        out += job_panel(job, width)
+        out += job_panel(job, width, shared_log=counts[str(job.log)] > 1)
     out.append(f"{DIM}{('─' * width)}{RESET}")
 
     # GPU utilisation is pinned to 0-100: an idle stretch auto-scaled to its own noise
