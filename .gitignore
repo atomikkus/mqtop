@@ -5,3 +5,15 @@ build/
 dist/
 *.egg-info/
 .venv/
+
+# Rust
+/target/
+Cargo.lock.bak
+
+# Agent init backups
+*.mqtop.bak
+*.bak.*
+
+# Local/editor
+.DS_Store
+*.swp

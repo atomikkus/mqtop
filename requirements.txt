@@ -1,0 +1,3 @@
+# Dev/test shim for the Python mqtop package (parity + emit compatibility).
+# Install: python -m venv .venv && .venv\Scripts\pip install -r requirements.txt
+-e .[dev]

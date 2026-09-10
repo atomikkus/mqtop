@@ -1,0 +1,17 @@
+---
+description: mqtop long-job monitoring for Cursor agents
+globs:
+  - "**/*train*.py"
+  - "**/*pipeline*"
+  - "**/*.sh"
+alwaysApply: false
+---
+
+Follow the mqtop agent rules (AGENTS.md mqtop-rs block).
+
+When starting a long job:
+1. Ensure log path ends in `.log` and both stdout/stderr are redirected.
+2. Emit `##ST` records (or `mqtop-rs emit`) with `phase`, `i`, `n`, `eta_s`.
+3. Use bracketed match patterns in mqtop.toml / `--job`.
+4. Verify with `mqtop-rs --once` or `mqtop-rs doctor --agents`.
+5. Do not poll over SSH; attach on the box.

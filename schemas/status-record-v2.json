@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/atomikkus/mqtop/schemas/status-record-v2.json",
+  "title": "mqtop status record",
+  "description": "Additive ##ST JSON payload. v1 records remain valid; v2 fields are optional.",
+  "type": "object",
+  "properties": {
+    "job": { "type": "string" },
+    "t": { "type": "number" },
+    "phase": { "type": "string" },
+    "i": { "type": ["number", "string"] },
+    "n": { "type": ["number", "string"] },
+    "eta_s": { "type": "number" },
+    "schema": { "type": "string", "const": "mqtop/2" },
+    "run_id": { "type": "string" },
+    "stage": { "type": "string" },
+    "parent_stage": { "type": "string" },
+    "state": { "type": "string" },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": { "type": ["number", "string", "boolean"] }
+    }
+  },
+  "additionalProperties": true
+}
