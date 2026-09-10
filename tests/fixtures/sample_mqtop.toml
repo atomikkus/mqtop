@@ -1,0 +1,10 @@
+dir = "logs"
+
+[[job]]
+name = "teacher"
+log = "logs/chain.log"
+match = "teacher[.]py"
+
+[[job]]
+name = "student"
+log = "logs/student.log"

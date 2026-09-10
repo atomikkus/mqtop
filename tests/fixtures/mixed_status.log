@@ -1,0 +1,3 @@
+##ST {"job":"build","phase":"crop","i":40,"n":100,"kept":31}
+ordinary line
+##ST {"job":"build","schema":"mqtop/2","run_id":"exp1","stage":"train","parent_stage":"crop","state":"running","i":10,"n":100,"metrics":{"loss":0.42}}
