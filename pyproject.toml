@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mqtop"
+version = "0.1.0"
+description = "A terminal monitor for long jobs, read from their logs on the box they run on"
+readme = "README.md"
+requires-python = ">=3.11"          # tomllib
+license = "MIT"
+authors = [{name = "Satya"}]
+keywords = ["tui", "monitor", "logs", "gpu", "ml"]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Monitoring",
+]
+# No dependencies, and that is a design choice rather than an accident: this gets
+# copied onto boxes and run with whatever interpreter is there, often inside a conda
+# env that must not be disturbed. Braille plots and /proc parsing are cheaper than
+# an install that can fail.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+mqtop = "mqtop.tui:main"
+
+[project.urls]
+Source = "https://github.com/atomikkus/mqtop"
+
+[tool.setuptools]
+packages = ["mqtop"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
