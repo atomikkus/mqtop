@@ -24,8 +24,15 @@ def test_a_job_flag_carries_name_log_and_pattern():
 
 def test_a_pattern_is_guessed_from_the_log_name_when_omitted():
     j = jobs.parse_job_arg("build=/tmp/build_corpus.log")
-    assert j.match == "build_corpus[.]py"
+    assert j.match == "build_corpus[.]"
     assert j.match_is_guess, "a guess must be marked as one"
+
+
+def test_the_guess_does_not_assume_python():
+    """Found on the first live run: a chain script called chain_distil.sh, watched
+    through chain_distil.log, read as quiet while it was running -- the guess had
+    hardcoded .py."""
+    assert jobs.default_pattern(jobs.Path("/tmp/chain_distil.log")) == "chain_distil[.]"
 
 
 def test_a_windows_drive_letter_is_not_mistaken_for_a_pattern():
@@ -117,7 +124,7 @@ def test_a_config_file_supplies_names_logs_and_patterns(tmp_path):
     js, settings = jobs.load_config(tmp_path / "mqtop.toml")
     assert [j.name for j in js] == ["teacher", "student"]
     assert js[0].match == "teacher[.]py" and not js[0].match_is_guess
-    assert js[1].match == "s[.]py" and js[1].match_is_guess
+    assert js[1].match == "s[.]" and js[1].match_is_guess
     assert settings["dir"] == "/srv/logs"
 
 

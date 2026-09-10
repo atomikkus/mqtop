@@ -116,3 +116,53 @@ def test_once_prints_a_frame_and_exits(tmp_path, capsys, monkeypatch):
 def test_a_bad_job_flag_exits_with_a_message_not_a_traceback(tmp_path, capsys):
     assert tui.main(["--job", "nonsense", "--once"]) == 2
     assert "name=log" in capsys.readouterr().err
+
+
+# --- liveness -------------------------------------------------------------------
+
+
+def test_the_monitor_never_counts_itself_as_the_job(monkeypatch):
+    """pgrep -f matches whole command lines, so `mqtop --job x=~/train.log` matches any
+    pattern derived from that path. Three earlier versions of this check reported every
+    job alive forever because of it."""
+    import os
+    import subprocess
+
+    class R:
+        stdout = f"{os.getpid()}\n{os.getppid()}\n"
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: R())
+    assert tui.alive("anything") is False
+
+
+def test_a_real_other_process_still_counts(monkeypatch):
+    import os
+    import subprocess
+
+    class R:
+        stdout = f"{os.getpid()}\n999999\n"
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: R())
+    assert tui.alive("anything") is True
+
+
+def test_no_match_is_not_alive(monkeypatch):
+    import subprocess
+
+    class R:
+        stdout = ""
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: R())
+    assert tui.alive("anything") is False
+
+
+def test_a_broken_pgrep_reads_as_not_running_rather_than_crashing(monkeypatch):
+    """A monitor that dies because pgrep is missing is worse than one that under-reports
+    liveness; staleness still carries the signal."""
+    import subprocess
+
+    def boom(*a, **k):
+        raise FileNotFoundError("pgrep")
+
+    monkeypatch.setattr(subprocess, "run", boom)
+    assert tui.alive("anything") is False

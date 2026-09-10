@@ -95,12 +95,23 @@ def disk(where: Path) -> tuple[float, float]:
         return 0.0, 0.0
 
 
-def alive(pattern: str) -> bool:
+def alive(pattern: str, exclude: set[int] | None = None) -> bool:
+    """Is a process matching `pattern` running, not counting this monitor?
+
+    `pgrep -f` searches whole command lines and excludes only itself, so a monitor
+    invoked as `mqtop --job x=~/train.log` matches any pattern derived from that
+    argument -- and then reports the job alive forever, whatever it is doing. Dropping
+    our own pid and our shell's makes that structural rather than a matter of writing
+    the pattern carefully.
+    """
+    drop = {os.getpid(), os.getppid()} | (exclude or set())
     try:
-        return subprocess.run(["pgrep", "-f", pattern],
-                              capture_output=True, timeout=2).returncode == 0
+        r = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True,
+                           timeout=2)
     except Exception:
         return False
+    pids = {int(x) for x in r.stdout.split() if x.isdigit()}
+    return bool(pids - drop)
 
 
 def bar(pct: float, width: int) -> str:
@@ -123,7 +134,7 @@ def job_state(job: Job, running: bool, since: float | None, exists: bool) -> str
         return "running"
     if job.match_is_guess:
         # The pattern was inferred from the filename, so "no process matched" is not
-        # evidence the job ended -- it may simply not be a .py of that name.
+        # evidence the job ended -- the process may simply not be named after its log.
         return "quiet"
     return "ended"
 

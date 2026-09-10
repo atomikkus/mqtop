@@ -33,13 +33,19 @@ class Job:
 
 
 def default_pattern(log: Path) -> str:
-    """A pgrep pattern guessed from the log's name: build_corpus.log -> build_corpus[.]py
+    """A pgrep pattern guessed from the log's name: build_corpus.log -> build_corpus[.]
 
-    The bracket is not decoration. `pgrep -f build_corpus.py` matches the monitor's own
-    command line whenever the pattern appears in it, so every job reads as alive forever
-    -- which is exactly what happened to three earlier versions of this check.
+    Deliberately not `[.]py`. The first live run of this watched a chain script called
+    chain_distil.sh through chain_distil.log and reported it quiet while it was running,
+    because the guess had assumed Python. The stem plus a literal dot matches whatever
+    the extension turns out to be.
+
+    The bracket is not decoration: `pgrep -f build_corpus.py` matches any command line
+    containing that text, including the monitor's own, which made three earlier versions
+    of this check report every job alive forever. `alive()` also drops our own pid, so
+    the two guards are independent.
     """
-    return re.escape(log.stem).replace(r"\.", "[.]").replace("\\", "") + "[.]py"
+    return re.escape(log.stem).replace(r"\.", "[.]").replace("\\", "") + "[.]"
 
 
 def parse_job_arg(arg: str) -> Job:
