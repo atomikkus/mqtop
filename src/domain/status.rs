@@ -36,14 +36,14 @@ impl StatusRecord {
         let Value::Object(mut map) = v else {
             return None;
         };
-        let job = map.remove("job").and_then(|x| match x {
-            Value::String(s) => Some(s),
-            other => Some(other.to_string()),
+        let job = map.remove("job").map(|x| match x {
+            Value::String(s) => s,
+            other => other.to_string(),
         });
         let t = map.remove("t").and_then(as_f64);
-        let phase = map.remove("phase").and_then(|x| match x {
-            Value::String(s) => Some(s),
-            other => Some(other.to_string()),
+        let phase = map.remove("phase").map(|x| match x {
+            Value::String(s) => s,
+            other => other.to_string(),
         });
         let i = map.remove("i");
         let n = map.remove("n");
@@ -366,9 +366,9 @@ mod tests {
         for _ in 0..4000 {
             writeln!(f, "{}", "x".repeat(200)).unwrap();
         }
-        writeln!(f, "{PREFIX}{}", r#"{"job":"j","i":1}"#).unwrap();
+        writeln!(f, "{PREFIX}{{\"job\":\"j\",\"i\":1}}").unwrap();
         writeln!(f, "noise").unwrap();
-        writeln!(f, "{PREFIX}{}", r#"{"job":"j","i":2}"#).unwrap();
+        writeln!(f, "{PREFIX}{{\"job\":\"j\",\"i\":2}}").unwrap();
         let got = read_records(&p, 4096);
         let is: Vec<_> = got.iter().map(|r| r.i.as_ref().unwrap().as_i64().unwrap()).collect();
         assert_eq!(is, vec![1, 2]);
@@ -380,7 +380,7 @@ mod tests {
         let p = dir.path().join("a.log");
         let mut f = File::create(&p).unwrap();
         writeln!(f, "[ 1] slide one").unwrap();
-        writeln!(f, "{PREFIX}{}", r#"{"job":"j","i":1}"#).unwrap();
+        writeln!(f, "{PREFIX}{{\"job\":\"j\",\"i\":1}}").unwrap();
         assert_eq!(last_line(&p, 8192), "[ 1] slide one");
 
         let p2 = dir.path().join("b.log");

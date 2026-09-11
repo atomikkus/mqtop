@@ -25,8 +25,6 @@ static PREV_CPU: Mutex<Option<(f64, f64)>> = Mutex::new(None);
 pub fn hostname() -> String {
     #[cfg(unix)]
     {
-        let mut buf = [0u8; 256];
-        // libc not required — use uname via std where possible
         if let Ok(out) = Command::new("uname").arg("-n").output() {
             let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
             if !s.is_empty() {

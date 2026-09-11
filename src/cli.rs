@@ -16,7 +16,11 @@ use crate::domain::status::emit_record;
 use crate::ui::{self, Tab};
 
 #[derive(Parser, Debug)]
-#[command(name = "mqtop-rs", about = "Ratatui job monitor (##ST compatible)")]
+#[command(
+    name = "mqtop-rs",
+    version,
+    about = "Ratatui job monitor (##ST compatible)"
+)]
 pub struct Cli {
     /// Job as name=log[:pattern]; repeat. Overrides config.
     #[arg(long = "job", action = clap::ArgAction::Append, global = true)]
